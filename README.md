@@ -1,6 +1,6 @@
 # Smolfy Extension
 
-![Logo](icons/icon128.png) <!-- Assuming logo path -->
+![Logo](icons/logo.png) <!-- Assuming logo path -->
 
 So you're tired of juggling between tabs just to skip a song or adjust the volume on Spotify? 😩 Fear not because **Smolfy** is here to save your day and your sanity This Chrome extension lets you control Spotify playback and access library features right from your browser toolbar No more keeping that Spotify tab open like it's glued to your browser Free up that space for memes or something 🎤✨
 
