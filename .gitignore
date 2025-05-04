@@ -1,0 +1,13 @@
+# Ignore configuration files containing secrets
+config.js
+
+# Ignore node_modules directory (if you ever add npm dependencies)
+node_modules/
+
+# Ignore build artifacts (if you ever add a build process)
+dist/
+build/
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db 

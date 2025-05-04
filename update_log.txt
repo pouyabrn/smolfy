@@ -1,0 +1,130 @@
+Update Log - Spotify Chrome Extension
+=====================================
+
+Phase 1: Setup & Authentication
+-------------------------------
+*   Created initial project structure:
+    *   `manifest.json` (Manifest V3, background script, popup, storage/identity permissions)
+    *   `popup.html` (Basic placeholder HTML)
+    *   `background.js` (Empty service worker)
+    *   `update_log.txt` (This file)
+*   Implemented OAuth 2.0 Implicit Grant Flow (`background.js`):
+    *   Added `CLIENT_ID`, `REDIRECT_URI`, `SCOPES` constants.
+    *   Created `getToken` function to check/retrieve token from `chrome.storage.local`.
+    *   Created `authenticate` function using `chrome.identity.launchWebAuthFlow`.
+    *   Handles token parsing and storage.
+*   Updated `popup.js`:
+    *   Checks auth status on load using `GET_AUTH_STATUS` message.
+    *   Displays "Login" button or authenticated view.
+    *   Handles `LOGIN` and `LOGOUT` messages.
+*   Updated `popup.html`:
+    *   Added `status` div.
+    *   Added basic structure for authenticated view (playlists, search, player).
+    *   Improved basic styling.
+
+Phase 2: Data Retrieval
+-----------------------
+*   Added `spotifyApiCall` helper function in `background.js`:
+    *   Handles adding auth header.
+    *   Includes basic error handling for 401 (Unauthorized) and other API errors.
+*   Implemented playlist fetching:
+    *   Added `GET_PLAYLISTS` message handler in `background.js` (calls `/me/playlists`).
+    *   Updated `popup.js` to request playlists and display them in a list.
+    *   Added basic error display and handling for expired tokens.
+*   Implemented track search:
+    *   Added `SEARCH_TRACKS` message handler in `background.js` (calls `/search`).
+    *   Updated `popup.js` with search input and button.
+    *   Displays search results or status messages.
+    *   Added basic error display and handling for expired tokens.
+*   Updated `popup.html` with dedicated sections/markup for playlists and search.
+
+Phase 3: Playback Implementation (Web Playback SDK)
+-----------------------------------------------------
+*   Added `offscreen` permission to `manifest.json`.
+*   Created `offscreen.html` to host the SDK script.
+*   Created `offscreen.js`:
+    *   Loads Spotify Web Playback SDK script.
+    *   Implements `onSpotifyWebPlaybackSDKReady`.
+    *   Initializes `Spotify.Player`, requesting token from background script via `GET_ACCESS_TOKEN` message.
+    *   Sets up SDK event listeners (ready, not_ready, errors, state_changed).
+    *   Sends `SDK_READY` message with device ID back to background script.
+    *   Handles messages from background (`SDK_PLAY`, `SDK_PAUSE`, `SDK_RESUME`, `SDK_NEXT_TRACK`, `SDK_PREVIOUS_TRACK`, `SDK_DISCONNECT`) to control the SDK player.
+    *   Routes actual playback initiation (`SDK_PLAY`) back to background (`WEB_API_PLAY`) to use Web API targeting the SDK's device ID for reliability.
+*   Updated `background.js`:
+    *   Added helper functions (`hasOffscreenDocument`, `setupOffscreenDocument`, `ensureOffscreenDocument`) to manage the offscreen document lifecycle using `chrome.offscreen` API.
+    *   Added helper `sendCommandToSdk` to reliably send messages to the offscreen document.
+    *   Added message handlers for SDK lifecycle events (`SDK_READY`, `SDK_NOT_READY`, `SDK_AUTH_ERROR`, `SDK_ACCOUNT_ERROR`, `GET_ACCESS_TOKEN`).
+    *   Added handler for `WEB_API_PLAY` (routed from offscreen doc).
+    *   Modified popup playback message handlers (`PLAY`, `PAUSE`, `NEXT_TRACK`, `PREVIOUS_TRACK`) to route commands to the offscreen document via `sendCommandToSdk`.
+    *   Modified `LOGOUT` to also disconnect the SDK player.
+    *   Ensures offscreen document is created on startup/install if authenticated.
+*   (Note: `popup.js` interaction logic remains largely the same, but underlying playback mechanism changed).
+
+Phase 4: Polish & Features (Basic)
+-----------------------------------
+*   Refined UI in `popup.js` and `popup.html`:
+    *   Added simple loading spinners (⏳) for playlist loading, search, and player actions.
+    *   Improved layout slightly (e.g., logout button position, search input/button layout).
+    *   Centralized display functions for errors/status messages in different sections.
+    *   Ensured spinners are shown/hidden during async operations.
+*   Refactored playback action calls in `popup.js` into a common `handlePlaybackAction` function.
+
+Troubleshooting & SDK Fixes
+---------------------------
+*   Addressed `unsupported_response_type` error by switching auth flow to Authorization Code with PKCE.
+    *   Added PKCE helper functions (`generateCodeVerifier`, `generateCodeChallenge`, etc.) to `background.js`.
+    *   Implemented `exchangeCodeForToken` function.
+    *   Updated `authenticate` function for PKCE flow.
+    *   Added `session` permission to `manifest.json` for storing `code_verifier`.
+*   Addressed `No active device found` error (when using Web API for playback) by implementing the Web Playback SDK via an Offscreen Document.
+    *   Details in "Phase 3b" log entry.
+*   Addressed Content Security Policy (CSP) error (`Refused to load the script 'https://sdk.scdn.co/...'`).
+    *   Bundled the `spotify-player.js` SDK script within the extension.
+    *   Updated `offscreen.html` to load the local script.
+    *   Simplified `content_security_policy` in `manifest.json` as remote script loading was no longer needed.
+*   Refined Play/Pause message routing in `background.js` for SDK.
+
+Further Potential Enhancements (Not Implemented):
+*   More robust error handling and user feedback.
+*   Options page for settings.
+*   PKCE flow for authentication instead of Implicit Grant.
+*   Web Playback SDK integration (for Premium users).
+*   Visual indication of the currently playing track in lists.
+*   Debouncing search input.
+*   More sophisticated player state management.
+
+Phase 5: UI Enhancements & Polish
+---------------------------------
+*   Applied Spotify-like color palette (dark theme, green accents) via CSS variables in `popup.html`.
+*   Added Volume Control:
+    *   Added range slider to `popup.html`.
+    *   Added `SET_VOLUME` message handler in `background.js` routing to SDK.
+    *   Added `SDK_SET_VOLUME` handler in `offscreen.js` to call `player.setVolume()`.
+    *   Added input listener in `popup.js` to send volume changes.
+*   Replaced Emoji Icons with Image Placeholders:
+    *   Updated playback/control buttons in `popup.html` to use `<img>` tags (requires user to add `icons/*.png` files).
+    *   Updated `popup.js` (`updatePlayerState`) to change `src` attribute of play/pause and repeat icons based on player state.
+*   Refined overall CSS for a more modern look.
+*   Adjusted player button CSS for better icon visibility (transparent background, removed filter).
+*   Reduced main border-radius for less extreme rounded corners.
+*   Added green text color on hover for playlist/search items.
+*   Repositioned blurred album art to be behind only the player controls section.
+    *   Removed global background elements/styles.
+    *   Added `.artwork-bg` div within `#playerControls`.
+    *   Updated CSS and `popup.js` to target new element.
+*   Styled scrollbars for content wrapper.
+*   Replaced H1 title with top logo image.
+*   Further CSS refinement for icons (removed filter, adjusted size/opacity).
+*   Added console logs for debugging artwork background setting.
+*   Simplified CSS positioning for main sections to debug layout order issue.
+*   Added console logs to debug playlist collapsible functionality.
+*   Attempted CSS fix for layout order using more specific block display rules.
+*   Added more detailed logging for playlist button element finding and click listener status.
+*   Changed Playlists and Search sections to be toggled by buttons instead of collapsible headers.
+    *   Updated HTML structure.
+    *   Updated CSS for new toggle buttons and containers.
+    *   Updated JS event listeners to target buttons and toggle containers.
+    *   Playlist fetching is now deferred until the section is first expanded.
+*   Attempted icon visibility fix by forcing button content empty and simplifying icon CSS.
+*   Added more verbose logging in `popup.js` for artwork element finding and URL checking.
+*   Attempted to fix `TypeError: Cannot set properties of null (setting 'src')` by ensuring icon element references are obtained after `innerHTML` is set and adding null checks before use. 

@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Spotify Smolfy</title>
+  <style>
+    :root {
+      --spotify-black: #191414;
+      --spotify-green: #1DB954;
+      --spotify-white: #FFFFFF;
+      --spotify-grey: #B3B3B3;
+      --spotify-light-grey: #535353;
+      --spotify-dark-grey: #282828;
+    }
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: var(--spotify-black);
+      color: var(--spotify-white);
+      min-width: 380px; /* Slightly wider */
+      padding: 15px; /* RESTORE body padding */
+      font-size: 14px;
+      /* Hide main body scrollbar */
+    }
+    /* Hide ALL scrollbars - Target html and body */
+    html, body {
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none;  /* IE 10+ */
+    }
+    html::-webkit-scrollbar, 
+    body::-webkit-scrollbar { /* WebKit */
+      display: none;
+    }
+    h1, h4 {
+      color: var(--spotify-white);
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+    h1 {
+      /* text-align: center; */ /* Remove centering for h1 */
+      font-size: 1.5em;
+      margin-bottom: 15px;
+    }
+    h4 {
+      font-size: 0.9em;
+      color: var(--spotify-grey);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    hr {
+      border: 0;
+      border-top: 1px solid var(--spotify-dark-grey);
+      margin: 15px 0;
+    }
+    button {
+      background-color: var(--spotify-light-grey);
+      color: var(--spotify-white);
+      border: none;
+      border-radius: 500px; /* Rounded buttons */
+      padding: 8px 15px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: background-color 0.2s ease;
+      margin: 2px;
+    }
+    button:hover {
+      background-color: #878787;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    button.active {
+      background-color: var(--spotify-green);
+      color: var(--spotify-black);
+    }
+    button.active:hover {
+      background-color: #1ed760;
+    }
+
+    #status {
+      font-size: 0.8em;
+      color: var(--spotify-grey);
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    #content {
+      margin-top: 5px;
+      /* REMOVE padding from #content */
+    }
+    #userInfo {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    #userInfo img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    #userInfo span {
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+    #logoutButton {
+      margin-left: auto; /* Push logout button to the right */
+      background-color: var(--spotify-dark-grey);
+      padding: 5px 10px;
+      font-size: 0.8em;
+    }
+    button:hover {
+      background-color: var(--spotify-green);
+    }
+
+    #playlists ul, #searchResults ul {
+      list-style: none;
+      padding: 0;
+      max-height: 180px; /* Increased height */
+      overflow-y: auto;
+      margin-top: 5px;
+    }
+    /* Style for playlist tracks */
+    #playlists ul ul {
+      max-height: 150px;
+      margin-left: 15px;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      border-left: 1px solid var(--spotify-light-grey);
+      padding-left: 10px;
+    }
+
+    /* Enhanced list styling */
+    #playlistContainer,
+    #searchContainer {
+        background-color: var(--spotify-black); /* Match body background */
+        border-radius: 0px; /* Remove radius for full width feel */
+        margin-bottom: 0; /* Remove bottom margin */
+        margin-left: -15px;
+        margin-right: -15px;
+        width: calc(100% + 30px);
+        box-sizing: border-box; /* Ensure padding is included in width calc */
+        box-shadow: none; /* Remove shadow */
+        transition: padding 0.3s ease-out;
+        padding-left: 0; /* Ensure no horizontal padding when collapsed */
+        padding-right: 0; /* Ensure no horizontal padding when collapsed */
+        padding-top: 0; /* Vertical padding only when expanded */
+        padding-bottom: 0; /* Vertical padding only when expanded */
+    }
+
+    /* Add padding only when expanded */
+    #playlistContainer.expanded,
+    #searchContainer.expanded {
+        padding: 5px 15px; /* Add horizontal padding to align content */
+    }
+
+    #playlists ul, #searchResults ul, /* Combined playlist and search results ul */
+    #playlistList, /* Explicitly target generated playlist list */
+    #searchResultList /* Explicitly target generated search list */
+    {
+      list-style: none;
+      padding: 0; /* Remove padding, handled by li */
+      max-height: none; /* Remove max-height, let it flow */
+      overflow-y: auto;
+      margin-top: 0; /* Remove top margin */
+      /* border: 1px solid var(--spotify-light-grey); */ /* REMOVE border */
+      border-radius: 4px; /* Rounded corners for list */
+      background-color: var(--spotify-dark-grey); /* Solid dark background */
+    }
+
+    /* Modern Scrollbar Styles (WebKit/Blink) */
+    #playlistList::-webkit-scrollbar,
+    #searchResultList::-webkit-scrollbar {
+        display: none; /* Hide scrollbar for WebKit browsers */
+    }
+    #playlistList::-webkit-scrollbar-track,
+    #searchResultList::-webkit-scrollbar-track {
+        background: var(--spotify-dark-grey);
+        border-radius: 4px;
+    }
+    #playlistList::-webkit-scrollbar-thumb,
+    #searchResultList::-webkit-scrollbar-thumb {
+        background-color: var(--spotify-light-grey);
+        border-radius: 4px;
+        border: 2px solid var(--spotify-dark-grey); /* Creates padding around thumb */
+    }
+    #playlistList::-webkit-scrollbar-thumb:hover,
+    #searchResultList::-webkit-scrollbar-thumb:hover {
+        background-color: var(--spotify-grey);
+    }
+
+    /* Hide scrollbar for Firefox (might need testing) */
+    #playlistList,
+    #searchResultList {
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none;  /* IE 10+ */
+    }
+
+    /* Ensure list items have enough padding */
+    #playlists li, #searchResults li,
+    #playlistList li,
+    #searchResultList li
+     {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; /* Explicitly set font */
+      padding: 10px 15px; /* Adjust padding (use body padding L/R) */
+      cursor: pointer;
+      border-bottom: 1px solid var(--spotify-dark-grey); /* Darker separator for dark background */
+      transition: background-color 0.2s ease, color 0.2s ease;
+      color: var(--spotify-white); /* Default LI text color to white (for playlist names) */
+      line-height: 1.3; /* Adjust line height for two lines */
+    }
+    #playlists li:last-child, #searchResults li:last-child,
+    #playlistList li:last-child,
+    #searchResultList li:last-child
+     {
+      border-bottom: none;
+    }
+
+    #playlists li:hover, #searchResults li:hover,
+    #playlistList li:hover,
+    #searchResultList li:hover
+    {
+      background-color: var(--spotify-light-grey); /* Adjusted hover background */
+      color: var(--spotify-green); /* Make default LI text green on hover */
+    }
+    /* Style for playlist track items */
+    /* #playlists ul ul li { ... } */ /* This rule might be obsolete or need adjustment */
+
+    /* Make playlist and search result items interactive */
+    #playlistList li,
+    #searchResultList li {
+        cursor: pointer;
+        transition: background-color 0.2s ease, color 0.2s ease; /* Added color transition */
+    }
+
+    #playlistList li:hover,
+    #searchResultList li:hover {
+        background-color: var(--spotify-dark-grey);
+        color: var(--spotify-green); /* Make default LI text green on hover */
+    }
+
+    /* Make song title green on list item hover */
+    #playlistList li:hover .list-track-title,
+    #searchResultList li:hover .list-track-title {
+        color: var(--spotify-green);
+    }
+
+    /* Keep artist grey even when LI is hovered */
+    #playlistList li:hover .list-track-artist,
+    #searchResultList li:hover .list-track-artist {
+        color: var(--spotify-grey);
+    }
+
+    input[type="text"] {
+      /* background-color: var(--spotify-dark-grey); */ /* Remove solid background */
+      background-color: rgba(40, 40, 40, 0.7); /* Dark semi-transparent background */
+      border: 1px solid var(--spotify-light-grey);
+      color: var(--spotify-white);
+      border-radius: 4px;
+      padding: 8px 10px;
+      margin-right: 5px;
+      flex-grow: 1; /* Let input take space */
+      font-size: 0.95em;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--spotify-grey);
+    }
+    #search {
+      display: flex;
+      flex-direction: column; /* Stack input/button above results */
+    }
+    #search > div:first-of-type { /* Target the input/button container */
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    #search button {
+      flex-shrink: 0; /* Prevent button from shrinking */
+    }
+    #searchResults {
+      margin-top: 0;
+    }
+    #searchStatus {
+      text-align: center;
+      color: var(--spotify-grey);
+    }
+
+    #playerControls {
+      text-align: center;
+    }
+    #playerControls h4 {
+      margin-bottom: 15px;
+    }
+    #playerControls .playback-buttons button {
+      font-size: 1.5em; /* Bigger main controls */
+      background: none;
+      border-radius: 50%;
+      /* Default size for prev/next */
+      width: 32px; /* Even smaller prev/next */
+      height: 32px;
+      padding: 5px; /* Add some padding for touch area */
+      margin: 0 8px; /* Increase horizontal spacing */
+      display: inline-flex; /* Align icons */
+      align-items: center;
+      justify-content: center;
+    }
+    #playerControls .playback-buttons button:hover {
+      background-color: var(--spotify-dark-grey);
+    }
+    #nowPlaying {
+        margin-top: 10px; /* ADD top margin */
+        font-size: 0.9em;
+        color: #efefef;
+    }
+    #userInfo {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    #userInfo img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+    #userInfo span {
+        font-weight: bold;
+    }
+    #logoutButton {
+         margin-left: auto; /* Push logout button to the right */
+    }
+    #volumeControl {
+        display: flex;
+        align-items: center;
+        justify-content: center; /* Center volume control */
+        margin-top: 15px;
+    }
+    #volumeControl label {
+        font-size: 1.1em;
+        margin-right: 8px;
+    }
+    #volumeControl input[type="range"] {
+        width: 100px; /* Adjust width as needed */
+        height: 5px;
+        cursor: pointer;
+        background: var(--spotify-dark-grey);
+        border-radius: 5px;
+        appearance: none; /* Override default look */
+        -webkit-appearance: none;
+    }
+    /* Style the thumb (the draggable part) */
+    #volumeControl input[type="range"]::-webkit-slider-thumb {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 15px;
+        height: 15px;
+        background: var(--spotify-grey);
+        border-radius: 50%;
+        cursor: pointer;
+    }
+    #volumeControl input[type="range"]::-moz-range-thumb {
+        width: 15px;
+        height: 15px;
+        background: var(--spotify-grey);
+        border-radius: 50%;
+        cursor: pointer;
+        border: none; /* Remove default border in Firefox */
+    }
+    #volumeControl input[type="range"]:hover::-webkit-slider-thumb {
+         background: var(--spotify-green);
+    }
+     #volumeControl input[type="range"]:hover::-moz-range-thumb {
+         background: var(--spotify-white);
+     }
+    #playerControls .playback-buttons img,
+    #playerControls .secondary-controls img {
+        height: 20px; /* Base icon size */
+        width: 20px;
+        vertical-align: middle; /* Align icons better */
+        opacity: 0.8; /* Slightly dimmer icons */
+    }
+    #playerControls .playback-buttons button:hover img,
+    #playerControls .secondary-controls button:hover img {
+         opacity: 1;
+    }
+    #playerControls .playback-buttons #playPauseButton {
+        /* Make Play/Pause larger */
+        width: 60px; /* Even Bigger */
+        height: 60px;
+    }
+    #playerControls .playback-buttons #playPauseButton img {
+        height: 36px; /* Even Bigger */
+        width: 36px;
+    }
+    #playerControls .secondary-controls button.active img {
+        opacity: 1;
+        /* Use filter for green color on active state if icons are single-color (e.g., white) */
+        /* filter: invert(55%) sepia(98%) saturate(384%) hue-rotate(93deg) brightness(99%) contrast(93%); */ /* Example green filter */
+    }
+    #playerControls .secondary-controls button.active {
+         background: none; /* Ensure background doesn't obscure active state */
+         color: var(--spotify-green); /* Keep text/border green for active */
+    }
+
+    /* Basic Collapsible Styles */
+    .collapsible {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+        margin-top: 5px; /* Add some space above */
+        margin-bottom: 10px; /* Add space below */
+    }
+    .collapsible.expanded {
+        max-height: 300px; /* Adjust max height as needed */
+        overflow-y: auto; /* Allow scrolling if content exceeds max height */
+    }
+    .toggle-button {
+        background: none;
+        border: none;
+        color: var(--spotify-white);
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 0.9em;
+        padding: 0 5px;
+        vertical-align: middle; /* Align with the heading text */
+    }
+    .toggle-button:hover {
+        color: var(--spotify-white);
+    }
+    .toggle-icon {
+        display: inline-block;
+        transition: transform 0.2s ease-in-out;
+        margin-right: 3px;
+    }
+    .toggle-button.expanded .toggle-icon {
+         transform: rotate(90deg);
+    }
+
+    /* --- START: New styles for Section Toggle Icons --- */
+    #sectionToggles {
+        text-align: center;
+        margin-bottom: 10px; /* Space below the icons */
+        margin-top: 5px; /* Reduce top margin slightly */
+    }
+    #sectionToggles button {
+        background: none;
+        border: none;
+        border-radius: 50%; /* Circular */
+        padding: 8px; /* Increase padding */
+        margin: 0 8px; /* Space between icons */
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.2s ease, background-color 0.2s ease;
+    }
+    #sectionToggles button:hover {
+        opacity: 1;
+        background-color: var(--spotify-green); /* Highlight active section */
+    }
+    #sectionToggles button.active {
+        opacity: 1;
+        background-color: var(--spotify-light-grey); /* Highlight active section */
+    }
+    #sectionToggles button img {
+        height: 32px; /* Increase icon size */
+        width: 32px;
+        vertical-align: middle;
+        display: block; /* Prevent extra space below img */
+    }
+    /* --- END: New styles for Section Toggle Icons --- */
+
+    /* Artwork Background */
+    .artwork-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-size: cover;
+      background-position: center;
+      opacity: 0; /* Start hidden */
+      z-index: -1; /* Behind content */
+      transition: opacity 0.5s ease-in-out;
+      filter: blur(10px) brightness(0.6); /* Apply blur and dim */
+      transform: scale(1.1); /* Slightly zoom to avoid sharp edges after blur */
+      white-space: nowrap;
+    }
+
+    /* Style for the user profile link */
+    .user-profile-link {
+        display: flex; /* Align image and text */
+        align-items: center;
+        text-decoration: none; /* Remove underline */
+        color: inherit; /* Inherit text color */
+        transition: opacity 0.2s ease;
+    }
+    .user-profile-link:hover {
+        opacity: 0.8; /* Slight fade on hover */
+    }
+
+    /* Specific styles for Like button active state */
+    #playerControls .secondary-controls button#likeButton.active img {
+         /* Use filter for green color or swap to a filled icon */
+         /* filter: invert(55%) sepia(98%) saturate(384%) hue-rotate(93deg) brightness(99%) contrast(93%); */ /* Example green filter */
+         opacity: 1;
+         /* Assumes you have a heart-filled.png */
+         /* content: url('icons/heart-filled.png'); */ 
+    }
+    #playerControls .secondary-controls button#likeButton.active {
+        opacity: 1; /* Ensure it's fully visible when active */
+    }
+
+    #app-logo {
+        display: block; /* Ensure it takes block space */
+        height: 40px; /* Adjust height as needed */
+        width: auto; /* Maintain aspect ratio */
+        margin-bottom: 10px; /* Space below logo */
+        /* Logo will be left-aligned by default */
+    }
+
+    /* User Menu Container - Top Right */
+    #user-menu-container {
+        position: absolute;
+        top: 20px; /* Adjusted down slightly */
+        right: 15px; /* Adjust as needed */
+        z-index: 10; /* Ensure it's above other elements if needed */
+    }
+
+    /* Visible User Info (Trigger part) */
+    #user-menu-trigger {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+    }
+    #user-menu-trigger:hover {
+        background-color: var(--spotify-light-grey); /* Subtle hover on trigger */
+    }
+    #user-menu-trigger img {
+        width: 30px; /* Smaller image for menu */
+        height: 30px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    #user-menu-trigger span {
+        font-weight: bold;
+        font-size: 0.95em;
+        color: var(--spotify-white);
+    }
+
+    /* Dropdown Menu */
+    #user-dropdown {
+        display: none; /* Hidden by default */
+        position: absolute;
+        top: 100%; /* Position below the trigger */
+        right: 0;
+        background-color: var(--spotify-dark-grey);
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.3);
+        z-index: 1;
+        border-radius: 6px;
+        padding: 5px 0;
+        margin-top: 5px; /* Small gap */
+        overflow: hidden; /* Prevent content spilling before radius */
+    }
+
+    /* Add rule for JS toggle */
+    #user-dropdown.show {
+        display: block;
+    }
+
+    /* Dropdown Items (Links and Buttons) */
+    /* Reset and define base styles */
+    #user-dropdown a,
+    #user-dropdown button {
+        display: block; /* Ensure they take full width */
+        width: 100%;
+        box-sizing: border-box; /* Include padding in width */
+        padding: 10px 15px;
+        background: none;
+        border: none;
+        border-radius: 0; /* Ensure no radius */
+        cursor: pointer;
+        text-align: left;
+        white-space: nowrap;
+        font-size: 0.9em;
+        text-decoration: none; /* Remove underline from links */
+        color: var(--spotify-grey);
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    /* Define hover state */
+    #user-dropdown a:hover,
+    #user-dropdown button:hover {
+        background-color: var(--spotify-light-grey);
+        color: var(--spotify-green);
+    }
+
+    /* --- START: Center Back button --- */
+    /* Verify this rule exists and is correct */
+    .back-to-playlists {
+        display: block; /* Allow margin auto */
+        width: 100%; /* Make full width */
+        box-sizing: border-box; /* Include padding in width */
+        padding: 10px 8px; /* Match list item padding */
+        margin-left: 0;
+        margin-right: 0;
+        text-align: center; /* Center text */
+        margin-bottom: 5px; /* Keep existing margin */
+        /* Inherit button styles or override */
+        background-color: transparent; /* Make bg transparent initially */
+        border: none;
+        border-radius: 0; /* Match list item feel */
+        color: var(--spotify-grey);
+        font-size: 0.95em; /* Match list item font size */
+        transition: background-color 0.2s ease, color 0.2s ease; /* Add transitions */
+    }
+    .back-to-playlists:hover {
+        background-color: var(--spotify-light-grey); /* Match list item hover bg */
+        color: var(--spotify-green); /* Green text on hover */
+    }
+    /* --- END: Center Back button --- */
+
+    /* --- START: New styles for track/artist spans --- */
+    .list-track-title {
+        display: block;
+        font-size: 0.95em; /* Smaller list title */
+        font-weight: bold;
+        color: var(--spotify-white);
+        margin-bottom: 2px;
+        /* Add ellipsis for overflow if needed */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .list-track-artist {
+        display: block;
+        font-size: 0.7em; /* Even smaller list artist */
+        font-weight: 300; /* Thin */
+        color: var(--spotify-grey);
+        /* Add ellipsis */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    /* --- END: New styles for track/artist spans --- */
+
+    /* --- START: Styles for Now Playing Title/Artist --- */
+    .now-playing-title {
+        padding-top: 10px;
+        display: block;
+        font-size: 2em; /* Even Bigger title */
+        font-weight: bold;
+        color: var(--spotify-white);
+        margin-bottom: 18px; /* Smaller gap */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .now-playing-artist {
+        display: block;
+        font-size: 1.4em; /* Bigger artist */
+        font-weight: 300; /* Thin */
+        color: var(--spotify-grey);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-bottom: 15px;
+    }
+    /* --- END: Styles for Now Playing Title/Artist --- */
+
+    /* --- START: Styles for Volume/Like Container --- */
+    .volume-like-container {
+        display: flex;
+        align-items: center;
+        justify-content: center; /* Center items horizontally */
+        gap: 15px; /* Space between volume and like */
+        margin-top: 15px; /* Space above the container */
+    }
+
+    /* Adjust volume control margin within the container */
+    #volumeControl {
+        margin-top: 0; /* Remove previous top margin */
+    }
+
+    /* Style Like button in its new position */
+    .volume-like-container #likeButton {
+        background: none;
+        border: none;
+        padding: 0;
+        margin: 0; /* Remove default button margins */
+        cursor: pointer;
+        opacity: 0.8;
+        transition: opacity 0.2s ease;
+    }
+    .volume-like-container #likeButton:hover {
+        opacity: 1;
+    }
+    .volume-like-container #likeButton img {
+        height: 20px; /* Adjust size as needed */
+        width: 20px;
+        vertical-align: middle;
+    }
+    .volume-like-container #likeButton.active img {
+         /* Styles for liked state */
+         opacity: 1;
+    }
+    /* --- END: Styles for Volume/Like Container --- */
+
+    /* Adjust styling for all playback buttons, including moved ones */
+    #playerControls .playback-buttons button {
+        /* Ensure shuffle/repeat look okay here */
+        background: none; /* Common style */
+        border: none; /* Common style */
+        padding: 5px; /* Add some padding for touch area */
+        opacity: 0.8;
+        transition: opacity 0.2s ease;
+        margin: 0 8px; /* Increase horizontal spacing */
+        border-radius: 50%; /* Ensure all are circular */
+        width: 40px; /* New base size */
+        height: 40px; /* New base size */
+        display: inline-flex; /* Align icons */
+        align-items: center;
+        justify-content: center;
+    }
+    #playerControls .playback-buttons button:hover {
+         opacity: 1;
+         background-color: var(--spotify-dark-grey); /* Keep hover effect consistent */
+    }
+    #playerControls .playback-buttons button img {
+        height: 20px; /* Base icon size */
+        width: 20px;
+        vertical-align: middle; /* Align icons better */
+        display: block; /* Helps alignment */
+    }
+
+    /* Adjust active state styling for moved buttons */
+    #playerControls .playback-buttons button.active {
+         opacity: 1;
+    }
+    /* Specific background for active shuffle/repeat */
+    #playerControls .playback-buttons button#shuffleButton.active,
+    #playerControls .playback-buttons button#repeatButton.active {
+         background-color: var(--spotify-dark-grey);
+    }
+    #playerControls .playback-buttons button.active img {
+        opacity: 1;
+    }
+
+    /* --- START: Hide List Scrollbars --- */
+     #playlistContainer::-webkit-scrollbar, /* Target container */
+     #searchContainer::-webkit-scrollbar,  /* Target container */
+     #playlistList::-webkit-scrollbar,
+     #searchResultList::-webkit-scrollbar {
+        display: none; /* Hide scrollbar for WebKit browsers */
+    }
+    #playlistContainer, /* Target container */
+    #searchContainer,  /* Target container */
+    #playlistList,
+    #searchResultList {
+        scrollbar-width: none; /* Firefox */
+    }
+    /* --- END: Hide List Scrollbars --- */
+  </style>
+</head>
+<body>
+  <!-- <h1>Spotify Smolfy</h1> -->
+  <img src="icons/logo.png" alt="Smolfy Logo" id="app-logo"/>
+  <div id="status">Loading status...</div>
+  <div id="content">
+    <!-- This content will be generated by showAuthenticated() in popup.js -->
+    <!-- Example structure for reference: -->
+    <!-- 
+    <div id="userInfo">...</div>
+    <hr>
+    <div id="playerControls">...</div>
+    <hr>
+    <h4>Your Playlists ...</h4>
+    <div id="playlistContainer" class="collapsible">...</div>
+    <hr>
+    <h4>Search Tracks ...</h4>
+    <div id="searchContainer" class="collapsible">...</div>
+    <hr>
+    -->
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 
